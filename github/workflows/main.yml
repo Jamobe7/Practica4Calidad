@@ -1,0 +1,41 @@
+name: Flujo de Integración Continua (Practica 4)
+
+# 1. Detección de cambios (Trigger)
+on:
+  push:
+    branches:
+      - main # Asegúrate de que esta sea tu rama principal (main o master)
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # Entorno de ejecución
+
+    steps:
+    
+      # Paso 1: Checkout del código
+      - name: Checkout del Repositorio
+        uses: actions/checkout@v4
+      
+      # Paso 2: Configuración del JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+          
+      # 3. Compilación y Ejecución de Pruebas Unitarias
+      # Ejecuta mvn clean install (cubre los pasos de compilación y pruebas)
+      - name: Compilar y Ejecutar Pruebas con Maven
+        run: mvn --batch-mode clean install
+        
+      # 4. Análisis Estático de Calidad (SonarQube)
+      # Este paso requiere las credenciales configuradas en GitHub Secrets (Paso 7)
+      - name: Análisis de Calidad con SonarQube
+        run: mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+        
+      # 5. Publicación del Artefacto (Nexus)
+      # Solo se ejecuta si el análisis de calidad y las pruebas fueron exitosos
+      # Necesita un settings.xml configurado y credenciales de Nexus (Paso 7)
+      - name: Publicar Artefacto en Nexus
+        run: mvn deploy -s settings.xml
